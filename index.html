@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TikTok Console</title>
+  <style>
+    body {
+      background: black;
+      color: #00ff00;
+      font-family: monospace;
+      padding: 20px;
+    }
+
+    input, button {
+      background: black;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+      padding: 5px;
+      margin-top: 5px;
+    }
+
+    pre {
+      margin-top: 20px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+
+<h2>> TikTok Console</h2>
+
+<input id="user" placeholder="@usuario">
+<button onclick="buscar()">Executar</button>
+
+<pre id="console"></pre>
+
+<script>
+const consoleBox = document.getElementById("console");
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function typeText(text, speed = 20) {
+  for (let i = 0; i < text.length; i++) {
+    consoleBox.innerText += text[i];
+    await delay(speed);
+  }
+}
+
+async function fakeLoading(user) {
+  consoleBox.innerText = "";
+
+  await typeText(`> Iniciando sistema...\n`);
+  await delay(300);
+
+  await typeText(`> Conectando ao servidor do TikTok...\n`);
+  await delay(500);
+
+  await typeText(`> Buscando usuário: ${user}\n`);
+  await delay(400);
+
+  await typeText(`> Acessando banco de dados...\n`);
+  await delay(500);
+
+  await typeText(`> Decodificando informações...\n\n`);
+  await delay(500);
+}
+
+async function buscar() {
+  const user = document.getElementById("user").value.replace("@","");
+
+  await fakeLoading(user);
+
+  try {
+    // ⚠️ TROQUE por uma API real
+    const res = await fetch(`https://api.example.com/tiktok/user/${user}`);
+    const data = await res.json();
+
+    await typeText(`USER: ${data.username}\n`);
+    await typeText(`BIO: ${data.bio}\n`);
+    await typeText(`SEGUIDORES: ${data.followers}\n`);
+    await typeText(`SEGUINDO: ${data.following}\n`);
+    await typeText(`CURTIDAS: ${data.likes}\n\n`);
+
+    await typeText(`VIDEOS:\n`);
+
+    for (let v of data.videos) {
+      await typeText(`- ${v.title}\n`, 10);
+    }
+
+  } catch (err) {
+    await typeText(`> ERRO AO BUSCAR DADOS\n`);
+  }
+}
+</script>
+
+</body>
+</html>
