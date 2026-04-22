@@ -1,97 +1,178 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>TikTok Console</title>
+  <title>Matrix Console</title>
   <style>
     body {
+      margin: 0;
       background: black;
       color: #00ff00;
       font-family: monospace;
+      overflow: hidden;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    #terminal {
+      position: relative;
+      z-index: 1;
       padding: 20px;
     }
 
-    input, button {
-      background: black;
+    input {
+      background: transparent;
+      border: none;
       color: #00ff00;
-      border: 1px solid #00ff00;
-      padding: 5px;
-      margin-top: 5px;
+      font-family: monospace;
+      outline: none;
+      width: 100%;
     }
 
-    pre {
-      margin-top: 20px;
-      white-space: pre-wrap;
+    .line {
+      margin-bottom: 5px;
     }
   </style>
 </head>
 <body>
 
-<h2>> TikTok Console</h2>
+<canvas id="matrix"></canvas>
 
-<input id="user" placeholder="@usuario">
-<button onclick="buscar()">Executar</button>
-
-<pre id="console"></pre>
+<div id="terminal">
+  <div id="output"></div>
+  <div>> <input id="input" autofocus></div>
+</div>
 
 <script>
-const consoleBox = document.getElementById("console");
+// ===== MATRIX EFFECT =====
+const canvas = document.getElementById("matrix");
+const ctx = canvas.getContext("2d");
 
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-async function typeText(text, speed = 20) {
-  for (let i = 0; i < text.length; i++) {
-    consoleBox.innerText += text[i];
-    await delay(speed);
-  }
-}
+const letters = "01";
+const fontSize = 14;
+const columns = canvas.width / fontSize;
 
-async function fakeLoading(user) {
-  consoleBox.innerText = "";
+const drops = Array(Math.floor(columns)).fill(1);
 
-  await typeText(`> Iniciando sistema...\n`);
-  await delay(300);
+function drawMatrix() {
+  ctx.fillStyle = "rgba(0,0,0,0.05)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  await typeText(`> Conectando ao servidor do TikTok...\n`);
-  await delay(500);
+  ctx.fillStyle = "#0F0";
+  ctx.font = fontSize + "px monospace";
 
-  await typeText(`> Buscando usuário: ${user}\n`);
-  await delay(400);
+  drops.forEach((y, i) => {
+    const text = letters[Math.floor(Math.random() * letters.length)];
+    ctx.fillText(text, i * fontSize, y * fontSize);
 
-  await typeText(`> Acessando banco de dados...\n`);
-  await delay(500);
-
-  await typeText(`> Decodificando informações...\n\n`);
-  await delay(500);
-}
-
-async function buscar() {
-  const user = document.getElementById("user").value.replace("@","");
-
-  await fakeLoading(user);
-
-  try {
-    // ⚠️ TROQUE por uma API real
-    const res = await fetch(`https://api.example.com/tiktok/user/${user}`);
-    const data = await res.json();
-
-    await typeText(`USER: ${data.username}\n`);
-    await typeText(`BIO: ${data.bio}\n`);
-    await typeText(`SEGUIDORES: ${data.followers}\n`);
-    await typeText(`SEGUINDO: ${data.following}\n`);
-    await typeText(`CURTIDAS: ${data.likes}\n\n`);
-
-    await typeText(`VIDEOS:\n`);
-
-    for (let v of data.videos) {
-      await typeText(`- ${v.title}\n`, 10);
+    if (y * fontSize > canvas.height && Math.random() > 0.975) {
+      drops[i] = 0;
     }
 
-  } catch (err) {
-    await typeText(`> ERRO AO BUSCAR DADOS\n`);
+    drops[i]++;
+  });
+}
+
+setInterval(drawMatrix, 33);
+
+// ===== TERMINAL =====
+const input = document.getElementById("input");
+const output = document.getElementById("output");
+
+let logged = false;
+
+function print(text) {
+  const div = document.createElement("div");
+  div.className = "line";
+  div.innerText = text;
+  output.appendChild(div);
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+function fakeLogin(cmd) {
+  const parts = cmd.split(" ");
+
+  if (parts[1] === "admin" && parts[2] === "123") {
+    logged = true;
+    print("> Acesso concedido.");
+  } else {
+    print("> Acesso negado.");
   }
 }
+
+async function fakeScan(user) {
+  print("> Conectando...");
+  await new Promise(r => setTimeout(r, 500));
+
+  print("> Buscando dados...");
+  await new Promise(r => setTimeout(r, 700));
+
+  print("> Decodificando...");
+  await new Promise(r => setTimeout(r, 700));
+
+  // ⚠️ Aqui você pode colocar API real depois
+  print("");
+  print("USER: " + user);
+  print("BIO: exemplo bio...");
+  print("SEGUIDORES: 12345");
+  print("SEGUINDO: 120");
+  print("CURTIDAS: 99999");
+  print("");
+  print("VIDEOS:");
+  print("- video 1");
+  print("- video 2");
+  print("- video 3");
+}
+
+input.addEventListener("keydown", function(e) {
+  if (e.key === "Enter") {
+    const cmd = input.value;
+    print("> " + cmd);
+    input.value = "";
+
+    const args = cmd.split(" ");
+
+    switch(args[0]) {
+      case "help":
+        print("Comandos:");
+        print("login admin 123");
+        print("scan @usuario");
+        print("clear");
+        break;
+
+      case "login":
+        fakeLogin(cmd);
+        break;
+
+      case "scan":
+        if (!logged) {
+          print("> Faça login primeiro.");
+        } else {
+          fakeScan(args[1]);
+        }
+        break;
+
+      case "clear":
+        output.innerHTML = "";
+        break;
+
+      default:
+        print("> Comando não reconhecido.");
+    }
+  }
+});
+
+// mensagem inicial
+print("> Sistema iniciado...");
+print("> Digite 'help' para comandos.");
+
 </script>
 
 </body>
